@@ -20,6 +20,12 @@ public class PlayerMovement : MonoBehaviour
     public LayerMask groundMask;
     public float groundDrag;
 
+    public float jumpForce;
+    public float jumpCooldown;
+    public float airMultiplier;
+    bool canJump = true;
+    private KeyCode jumpKey = KeyCode.Space;
+
     // Start is called before the first frame update
 
    
@@ -37,6 +43,13 @@ public class PlayerMovement : MonoBehaviour
 
         KeyboardInput();
         LimitSpeed();
+
+        if (Input.GetKey(jumpKey) && isGrounded && canJump)
+        {
+            Jump();
+            canJump = false;
+            Invoke(nameof(ResetJumpCooldown), jumpCooldown);
+        }
 
         Debug.Log(isGrounded);
 
@@ -64,7 +77,16 @@ public class PlayerMovement : MonoBehaviour
     public void Movement()
     {
         movementDirection = (orientation.forward * verticalInput) + (orientation.right * horizontalInput);
-        playerRb.AddForce(movementDirection.normalized * movementSpeed * 10f, ForceMode.Force);
+
+        if (isGrounded)
+        {
+            playerRb.AddForce(movementDirection.normalized * movementSpeed * 10f, ForceMode.Force);
+        }
+        else if (!isGrounded)
+        {
+            playerRb.AddForce(movementDirection.normalized * movementSpeed * 10f * airMultiplier, ForceMode.Force);
+        }
+        
 
     }
 
@@ -77,6 +99,19 @@ public class PlayerMovement : MonoBehaviour
             Vector3 limitedVelocity = flatVel.normalized * movementSpeed;
             playerRb.velocity = new Vector3(limitedVelocity.x, playerRb.velocity.y, limitedVelocity.z);
         }
+    }
+
+    private void Jump()
+    {
+        //reset y velocity first
+        playerRb.velocity = new Vector3(playerRb.velocity.x, 0f, playerRb.velocity.z);
+
+        playerRb.AddForce(transform.up * jumpForce, ForceMode.Impulse);
+    }
+
+    private void ResetJumpCooldown()
+    {
+        canJump = true;
     }
 
 
