@@ -4,31 +4,84 @@ using UnityEngine;
 
 public class PlayerMovement : MonoBehaviour
 {
+    public float movementSpeed;
+    Rigidbody playerRb;
+    public Transform orientation;
+
+    Vector3 movementDirection;
+
+    float horizontalInput;
+    float verticalInput;
+
+    bool isGrounded;
+
+    public float playerHeight;
+    public float raycastAddDistance;
+    public LayerMask groundMask;
+    public float groundDrag;
+
     // Start is called before the first frame update
 
    
 
     void Start()
     {
-        
+        playerRb = GetComponent<Rigidbody>();
+        playerRb.freezeRotation = true;
+
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        float horizontalInput;
-        float verticalInput;
-        Vector3 movementUpdate;
+        isGrounded = Physics.Raycast(transform.position, Vector3.down, playerHeight*0.5f + raycastAddDistance, groundMask);
 
-        horizontalInput = Input.GetAxis("Horizontal");
-        verticalInput = Input.GetAxis("Vertical");
+        KeyboardInput();
+        LimitSpeed();
 
-        Debug.Log("Horizontal: " + horizontalInput + ", Vertical: " + verticalInput);
+        Debug.Log(isGrounded);
 
-        movementUpdate = new Vector3(horizontalInput, 0, verticalInput).normalized;
+        if (isGrounded)
+        {
+            playerRb.drag = groundDrag;
+        }
+        else
+        {
+            playerRb.drag = 0;
+        }
+    }
 
-        transform.position += (movementUpdate * Time.deltaTime);
-        
+    private void FixedUpdate()
+    {
+        Movement();
+    }
+
+    void KeyboardInput()
+    {
+        horizontalInput = Input.GetAxisRaw("Horizontal");
+        verticalInput = Input.GetAxisRaw("Vertical");
+    }
+
+    public void Movement()
+    {
+        movementDirection = (orientation.forward * verticalInput) + (orientation.right * horizontalInput);
+        playerRb.AddForce(movementDirection.normalized * movementSpeed * 10f, ForceMode.Force);
 
     }
+
+    private void LimitSpeed()
+    {
+        Vector3 flatVel = new Vector3(playerRb.velocity.x, 0f, playerRb.velocity.z);
+
+        if (flatVel.magnitude > movementSpeed)
+        {
+            Vector3 limitedVelocity = flatVel.normalized * movementSpeed;
+            playerRb.velocity = new Vector3(limitedVelocity.x, playerRb.velocity.y, limitedVelocity.z);
+        }
+    }
+
+
+
+
+
+    
 }
